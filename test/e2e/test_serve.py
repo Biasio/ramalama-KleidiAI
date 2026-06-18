@@ -37,7 +37,7 @@ def chdir(path):
         os.chdir(old_dir)
 
 
-DRY_RUN_TEST_MODEL = "dry_run_model"
+DRY_RUN_TEST_MODEL = "ollama://dry_run_model"
 RAMALAMA_DRY_RUN = ["ramalama", "-q", "--dryrun", "serve"]
 
 
@@ -69,7 +69,7 @@ def test_basic_dry_run():
     "extra_params, pattern, config, env_vars, expected",
     [
         pytest.param(
-            [], f".*{DRY_RUN_TEST_MODEL}.*", None, None, True,
+            [], r".*dry_run_model.*", None, None, True,
             id="check model name", marks=skip_if_no_container
         ),
         pytest.param(
@@ -101,7 +101,7 @@ def test_basic_dry_run():
             id="check --host is not present when run within container", marks=skip_if_no_container
         ),
         pytest.param(
-            ["--name", "foobar"], f".*{DRY_RUN_TEST_MODEL}.*", None, None, True,
+            ["--name", "foobar"], r".*dry_run_model.*", None, None, True,
             id="check test_model with --name foobar", marks=skip_if_no_container
         ),
         pytest.param(
@@ -265,7 +265,7 @@ def test_non_existing_model():
             ctx.check_output(["ramalama", "serve", "NON_EXISTING_MODEL"], stderr=STDOUT)
         assert exc_info.value.returncode == 22
         assert re.search(
-            r".*Error: Manifest for NON_EXISTING_MODEL:latest was not found in the Ollama registry",
+            r".*not a known shortname and no transport was specified",
             exc_info.value.output.decode("utf-8"),
         )
 
@@ -286,7 +286,7 @@ def test_nocontainer_and_name_flag_conflict():
 @pytest.mark.e2e
 @skip_if_no_container
 def test_full_model_name_expansion():
-    result = check_output(RAMALAMA_DRY_RUN + ["smollm"])
+    result = check_output(RAMALAMA_DRY_RUN + ["ollama://smollm"])
     pattern = ".*ai.ramalama.model=ollama://library/smollm:latest"
     assert re.search(pattern, result)
 
@@ -866,6 +866,35 @@ def test_serve_with_non_existing_images():
             r"Error: quay.io/ramalama/rag(?::latest)? does not exist.*",
             exc_info.value.output.decode("utf-8"),
         )
+
+
+@pytest.mark.e2e
+@skip_if_no_container
+def test_router_mode_dry_run(shared_ctx, test_model):
+    """ramalama serve (no model) in dryrun should produce a container command with --models-dir."""
+    ctx = shared_ctx
+    result = ctx.check_output(["ramalama", "-q", "--dryrun", "serve"])
+    assert re.search(r".*--models-dir /mnt/models", result)
+    assert re.search(r".*--mount=type=bind,src=.*,destination=/mnt/models/.*\.gguf,ro", result)
+
+
+@pytest.mark.e2e
+@skip_if_container
+def test_router_mode_nocontainer_fails():
+    """ramalama serve (no model) with --nocontainer should fail."""
+    with RamalamaExecWorkspace() as ctx:
+        with pytest.raises(CalledProcessError) as exc_info:
+            ctx.check_output(["ramalama", "--nocontainer", "serve"], stderr=STDOUT)
+        assert re.search(r".*router mode.*requires a container", exc_info.value.output.decode("utf-8"))
+
+
+@pytest.mark.e2e
+@skip_if_no_container
+def test_router_mode_models_max_dry_run(shared_ctx, test_model):
+    """--models-max flag is passed through to llama-server."""
+    ctx = shared_ctx
+    result = ctx.check_output(["ramalama", "-q", "--dryrun", "serve", "--models-max", "2"])
+    assert re.search(r".*--models-max 2", result)
 
 
 @pytest.mark.e2e
