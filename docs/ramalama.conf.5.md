@@ -171,6 +171,10 @@ Options: `llama.cpp`, `vllm`, `mlx`.
 
 **store**="$HOME/.local/share/ramalama": Directory where AI models and data are stored.
 
+**tempdir**="": Directory for temporary files used by operations such as convert and RAG.
+When set in `ramalama.conf`, this value is applied as `TMPDIR` and overrides the host environment.
+When unset, the host `TMPDIR` is used. On non-Windows systems, if `TMPDIR` is unset or empty, `/var/tmp` is used.
+
 **summarize_after**=4: Automatically summarize chat history after N messages to limit context growth.
 Set to 0 to disable.
 
@@ -261,6 +265,8 @@ Example configuration:
 Options: `Q2_K`, `Q3_K_S`, `Q3_K_M`, `Q3_K_L`, `Q4_0`, `Q4_K_S`, `Q4_K_M`, `Q5_0`, `Q5_K_S`, `Q5_K_M`, `Q6_K`, `Q8_0`.
 
 **ngl**=-1: Number of layers to offload to the GPU. Set to -1 to offload all layers.
+
+**ncmoe**=0: Keep the Mixture of Experts (MoE) weights of the first N layers in the CPU.  
 
 **temp**="0.8": Response sampling temperature.
 - Lower values: more deterministic output

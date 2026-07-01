@@ -1,14 +1,14 @@
-% ramalama-sandbox-goose 1
+% ramalama-sandbox-pi 1
 
 ## NAME
-ramalama\-sandbox\-goose - run Goose in a sandbox, backed by a local AI Model
+ramalama\-sandbox\-pi - run Pi in a sandbox, backed by a local AI Model
 
 ## SYNOPSIS
-**ramalama sandbox goose** [*options*] *model* [arg ...]
+**ramalama sandbox pi** [*options*] *model* [arg ...]
 
 ## DESCRIPTION
-Run Goose in a container, connected to a local model server also running
-in a container. Goose uses the model for reasoning and tool calling.
+Run Pi in a container, connected to a local model server also running
+in a container. Pi uses the model for reasoning and tool calling.
 
 When run with no arguments after the model, an interactive session is
 launched. If one or more arguments are provided, they are passed to the agent
@@ -33,8 +33,6 @@ exits, the model server container is automatically stopped and removed.
 
 @@option env
 
-@@option goose-image
-
 @@option help
 
 @@option host
@@ -58,6 +56,8 @@ exits, the model server container is automatically stopped and removed.
 @@option ngl
 
 @@option oci-runtime
+
+@@option pi-image
 
 @@option port
 
@@ -85,38 +85,38 @@ exits, the model server container is automatically stopped and removed.
 
 ## EXAMPLES
 
-Run the Goose agent with default settings:
+Run the Pi agent with default settings:
 ```
-ramalama sandbox goose qwen3:4b
+ramalama sandbox pi qwen3:4b
 ```
 
-Run the Goose agent with a custom image:
+Run the Pi agent with a custom image:
 ```
-ramalama sandbox goose --goose-image ghcr.io/aaif-goose/goose:1.27.1 qwen3:4b
+ramalama sandbox pi --pi-image myimage:v1 qwen3:4b
 ```
 
 Turn off thinking mode in the model the agent is connecting to (may result in faster responses):
 ```
-ramalama sandbox goose --thinking=off qwen3:4b
+ramalama sandbox pi --thinking=off qwen3:4b
 ```
 
 Start an interactive session with access to a local directory:
 ```
-ramalama sandbox goose -w ./src qwen3:4b
+ramalama sandbox pi -w ./src qwen3:4b
 ```
 
 Request the agent to perform actions non-interactively:
 ```
-ramalama sandbox goose -w ./src qwen3:4b Please analyze the source code in the current directory
+ramalama sandbox pi -w ./src qwen3:4b Please analyze the source code in the current directory
 ```
 
 Send instructions to the agent via stdin:
 ```
-echo "What is the speed of light in meters per second?" | ramalama sandbox goose qwen3:4b
+echo "What is the speed of light in meters per second?" | ramalama sandbox pi qwen3:4b
 ```
 
 ## SEE ALSO
 **[ramalama(1)](ramalama.1.md)**, **[ramalama-run(1)](ramalama-run.1.md)**, **[ramalama-serve(1)](ramalama-serve.1.md)**, **[ramalama-sandbox(1)](ramalama-sandbox.1.md)**
 
 ## HISTORY
-Mar 2026, Originally compiled by Mike Bonnet <mikeb@redhat.com>
+Jun 2026, Originally compiled by Brian <brian@ramalama>

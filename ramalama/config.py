@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+import tempfile
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
@@ -16,8 +17,10 @@ from ramalama.log_levels import LogLevel, coerce_log_level
 from ramalama.toml_parser import TOMLParser
 
 DEFAULT_IMAGE: str = version_tagged_image("quay.io/ramalama/ramalama")
-DEFAULT_STACK_IMAGE: str = version_tagged_image("quay.io/ramalama/llama-stack")
+DEFAULT_PI_IMAGE: str = version_tagged_image("quay.io/ramalama/pi-agent")
 DEFAULT_RAG_IMAGE: str = version_tagged_image("quay.io/ramalama/ramalama-rag")
+DEFAULT_STACK_IMAGE: str = version_tagged_image("quay.io/ramalama/llama-stack")
+DEFAULT_TMPDIR = "/var/tmp"
 DEFAULT_TOOLS_IMAGE: str = version_tagged_image("quay.io/ramalama/ramalama-tools")
 
 
@@ -165,6 +168,7 @@ class BaseConfig:
     default_rag_image: str = DEFAULT_RAG_IMAGE
     default_tools_image: str = DEFAULT_TOOLS_IMAGE
     default_stack_image: str = DEFAULT_STACK_IMAGE
+    default_pi_image: str = DEFAULT_PI_IMAGE
     dryrun: bool = False
     engine: Optional[SUPPORTED_ENGINES] = field(default_factory=get_default_engine)
     env: list[str] = field(default_factory=list)
@@ -188,6 +192,7 @@ class BaseConfig:
     settings: RamalamaSettings = field(default_factory=RamalamaSettings)
     store: str = field(default_factory=get_default_store)
     summarize_after: int = 4
+    tempdir: Optional[str] = None
     transport: str = "ollama"
     user: UserConfig = field(default_factory=UserConfig)
     verify: bool = True
@@ -301,6 +306,26 @@ def load_env_config(env: Optional[Mapping[str, str]] = None) -> dict[str, Any]:
     if log_level := config.get("log_level"):
         config["log_level"] = coerce_log_level(log_level)
     return config
+
+
+def ensure_tmpdir(config: Optional[Config] = None) -> None:
+    """Set ``TMPDIR`` for tempfile-backed operations.
+
+    When ``tempdir`` is set in ``ramalama.conf``, it overrides the host ``TMPDIR``.
+    Otherwise the host value is kept. On non-Windows systems, if neither is set,
+    ``/var/tmp`` is used.
+    """
+    if sys.platform == "win32":
+        return
+    if config is not None and config.is_set("tempdir"):
+        value = (config.tempdir or "").strip()
+        if value:
+            os.environ["TMPDIR"] = os.path.expanduser(value)
+            tempfile.tempdir = None
+            return
+    if not os.environ.get("TMPDIR", "").strip():
+        os.environ["TMPDIR"] = DEFAULT_TMPDIR
+        tempfile.tempdir = None
 
 
 def load_config(env: Optional[Mapping[str, str]] = None) -> Config:
